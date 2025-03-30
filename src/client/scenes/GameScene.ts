@@ -43,9 +43,26 @@ export class GameScene extends Scene {
     this.scale.setGameSize(width, height);
     this.scale.setZoom(1);
 
-    // Set camera size to match game size
+    // Set camera size to match game size and ensure it covers the entire viewport
     this.cameras.main.setSize(width, height);
     this.cameras.main.setBounds(0, 0, width, height);
+    this.cameras.main.setViewport(0, 0, width, height);
+
+    // Connect to server
+    this.socket = io("http://localhost:3001", {
+      transports: ["websocket", "polling"],
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
+    });
+
+    // Send initial game dimensions to server
+    this.socket.emit("updateGameDimensions", {
+      width: width,
+      height: height,
+    });
+
+    this.setupSocketListeners();
 
     // Handle window resize
     window.addEventListener("resize", () => {
@@ -55,9 +72,10 @@ export class GameScene extends Scene {
       // Update game scale
       this.scale.setGameSize(newWidth, newHeight);
 
-      // Update camera size and bounds
+      // Update camera size, bounds, and viewport
       this.cameras.main.setSize(newWidth, newHeight);
       this.cameras.main.setBounds(0, 0, newWidth, newHeight);
+      this.cameras.main.setViewport(0, 0, newWidth, newHeight);
 
       // Send new dimensions to server
       if (this.socket) {
@@ -67,15 +85,6 @@ export class GameScene extends Scene {
         });
       }
     });
-
-    // Connect to server
-    this.socket = io("http://localhost:3001", {
-      transports: ["websocket", "polling"],
-      reconnection: true,
-      reconnectionAttempts: 5,
-      reconnectionDelay: 1000,
-    });
-    this.setupSocketListeners();
 
     // Setup input handlers
     this.setupInputHandlers();
@@ -92,6 +101,11 @@ export class GameScene extends Scene {
   private setupSocketListeners() {
     this.socket.on("connect", () => {
       console.log("Connected to server");
+      // Send current game dimensions when connecting
+      this.socket.emit("updateGameDimensions", {
+        width: window.innerWidth,
+        height: window.innerHeight,
+      });
       this.socket.emit("joinGame");
     });
 

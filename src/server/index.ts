@@ -18,8 +18,8 @@ const PORT = 3001;
 const LASER_SPEED = 10;
 const LASER_DAMAGE = 10;
 const MAX_HEALTH = 100;
-const DEFAULT_GAME_WIDTH = 800;
-const DEFAULT_GAME_HEIGHT = 600;
+const DEFAULT_GAME_WIDTH = 1920;
+const DEFAULT_GAME_HEIGHT = 1080;
 
 const gameState: GameState = {
   players: new Map<string, Player>(),
@@ -65,12 +65,13 @@ setInterval(() => {
       }
     });
 
-    // Remove lasers that are out of bounds
+    // Remove lasers that are out of bounds with some padding
+    const padding = 100; // Add padding to prevent lasers from disappearing too early
     return (
-      laser.x >= 0 &&
-      laser.x <= gameState.gameWidth &&
-      laser.y >= 0 &&
-      laser.y <= gameState.gameHeight
+      laser.x >= -padding &&
+      laser.x <= gameState.gameWidth + padding &&
+      laser.y >= -padding &&
+      laser.y <= gameState.gameHeight + padding
     );
   });
 

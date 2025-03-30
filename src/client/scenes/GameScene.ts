@@ -122,6 +122,7 @@ export class GameScene extends Scene {
       this.updateSprites();
       this.updateHealthBars();
       this.updateWaitingScreen();
+      this.updateEndingScreen();
     });
   }
 
@@ -148,6 +149,72 @@ export class GameScene extends Scene {
           }
         )
         .setOrigin(0.5);
+    }
+  }
+
+  private updateEndingScreen() {
+    // Remove existing ending text and restart button if any
+    this.children.list.forEach((child) => {
+      if (
+        child instanceof Phaser.GameObjects.Text &&
+        (child.text.includes("Won") ||
+          child.text.includes("Press SPACE to Restart"))
+      ) {
+        child.destroy();
+      }
+    });
+
+    if (this.gameState.gameStatus === "ended") {
+      // Find the winning player (the one with health > 0)
+      const winningPlayer = Array.from(this.gameState.players.values()).find(
+        (player) => player.health > 0
+      );
+
+      if (winningPlayer) {
+        const playerNumber =
+          Array.from(this.gameState.players.keys()).indexOf(winningPlayer.id) +
+          1;
+        const endingText = this.add
+          .text(
+            this.cameras.main.centerX,
+            this.cameras.main.centerY,
+            `Player ${playerNumber} Won!`,
+            {
+              fontSize: "48px",
+              color: "#ffffff",
+              fontStyle: "bold",
+            }
+          )
+          .setOrigin(0.5);
+
+        // Add a restart button
+        const restartButton = this.add
+          .text(
+            this.cameras.main.centerX,
+            this.cameras.main.centerY + 60,
+            "Press SPACE to Restart",
+            {
+              fontSize: "24px",
+              color: "#ffffff",
+            }
+          )
+          .setOrigin(0.5);
+
+        // Make the button interactive
+        restartButton.setInteractive({ useHandCursor: true });
+
+        // Add click handler for the restart button
+        restartButton.on("pointerdown", () => {
+          this.socket.emit("joinGame");
+        });
+
+        // Add space key handler for restart
+        if (this.input?.keyboard) {
+          this.input.keyboard.once("keydown-SPACE", () => {
+            this.socket.emit("joinGame");
+          });
+        }
+      }
     }
   }
 

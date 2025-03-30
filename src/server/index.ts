@@ -90,18 +90,34 @@ io.on("connection", (socket) => {
   console.log("Player connected:", socket.id);
 
   socket.on("joinGame", () => {
-    const player: Player = {
-      id: socket.id,
-      x: Math.random() * gameState.gameWidth,
-      y: Math.random() * gameState.gameHeight,
-      rotation: 0,
-      velocity: { x: 0, y: 0 },
-      health: MAX_HEALTH,
-      maxHealth: MAX_HEALTH,
-    };
+    // Reset player's health and position
+    const existingPlayer = gameState.players.get(socket.id);
+    if (existingPlayer) {
+      existingPlayer.health = MAX_HEALTH;
+      existingPlayer.x = Math.random() * gameState.gameWidth;
+      existingPlayer.y = Math.random() * gameState.gameHeight;
+      existingPlayer.rotation = 0;
+      existingPlayer.velocity = { x: 0, y: 0 };
+    } else {
+      const player: Player = {
+        id: socket.id,
+        x: Math.random() * gameState.gameWidth,
+        y: Math.random() * gameState.gameHeight,
+        rotation: 0,
+        velocity: { x: 0, y: 0 },
+        health: MAX_HEALTH,
+        maxHealth: MAX_HEALTH,
+      };
+      gameState.players.set(socket.id, player);
+    }
 
-    gameState.players.set(socket.id, player);
-    gameState.waitingPlayers.push(socket.id);
+    // Add to waiting players if not already there
+    if (!gameState.waitingPlayers.includes(socket.id)) {
+      gameState.waitingPlayers.push(socket.id);
+    }
+
+    // Clear all lasers
+    gameState.lasers = [];
 
     // Check for matchmaking
     if (gameState.waitingPlayers.length >= 2) {
